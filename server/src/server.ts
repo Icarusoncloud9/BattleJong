@@ -18,60 +18,60 @@ wsServer.on("connection", (socket: WebSocket) => {
 
     console.log("Player connected");
 
-    socket.on("message", (inMsg:string) => {
-        const msgParts: string[] = inMsg.toString().split("_");
-        const message: string = msgParts[0];
-        const pid: string = msgParts[1];
-        switch(message) {
-            case "match":
-                players[pid].score += parseInt(msgParts[2]);
-                wsServer.clients.forEach(
-                    function each(inClient: WebSocket) {
-                        inClient.send(`update_${pid}_${players[pid].score}`);
-                    }
-                );
-                break;
-            case "done":
-                players[pid].stillPlaying = false;
-                let playersDone: number = 0;
-                for (const player in players) {
-                    if (players.hasOwnProperty(player)) {
-                        if (!players[player].stillPlaying) {
-                            playersDone++;
-                        }
+  socket.on("message", (inMsg: string) => {
+
+    console.log(`Message: ${inMsg}`);
+
+    const msgParts: string[] = inMsg.toString().split("_");
+    console.log(msgParts)
+    const message: string = msgParts[0];
+    const pid: string = msgParts[1];
+    switch (message) {
+
+        case "match":
+            players[pid].score += parseInt(msgParts[2]);
+            wsServer.clients.forEach(function each(inClient: WebSocket) {
+            inClient.send(`update_${pid}_${players[pid].score}`);
+            });
+        break;
+        case "done":
+            players[pid].stillPlaying = false;
+            let playersDone: number = 0;
+            for (const player in players) {
+                if (players.hasOwnProperty(player)) {
+                    if (!players[player].stillPlaying) {
+                        playersDone++;
                     }
                 }
-                if(playersDone === 2) {
-                    let winningPID: string;
-                    const pids: string[] = Object.keys(players);
-                    if (players[pids[0]].score > players[pids[1]].score) {
-                        winningPID = pids[0]
-                    } else {
-                        winningPID = pids[1]
-                    }
-                    wsServer.clients.forEach(function each(inClient: WebSocket) {
-                            inClient.send(`gameOver_${winningPID}`);
-                        }
-                    )
+            }
+            if(playersDone === 2) {
+                let winningPID: string;
+                const pids: string[] = Object.keys(players);
+                if (players[pids[0]].score > players[pids[1]].score) {
+                    winningPID = pids[0]
+                } else {
+                    winningPID = pids[1]
                 }
-                break;
-            
+                wsServer.clients.forEach(function each(inClient: WebSocket) {
+                        inClient.send(`gameOver_${winningPID}`);
+                    }
+                )
+            }
+            break;
         }
     })
 
     const pid: string = `pid${new Date().getTime()}`;
-    players[pid] = { score: 0, stillPlaying: true };
-    socket.send(`connected ${pid}`);
+    console.log(pid)
+    players[pid] = { score : 0, stillPlaying : true };
+    console.log(players)
+    socket.send(`connected_${pid}`);
 
-    if(Object.keys(players).length === 2) {
-        const shuffledLayout: number[][][] = shuffle();
-        wsServer.clients.forEach(
-            function each(inClient: WebSocket) {
-                inClient.send(
-                    `start_${JSON.stringify(shuffledLayout)}`
-                )
-            }
-        )
+    if (Object.keys(players).length === 2) {
+      const shuffledLayout: number[][][] = shuffle();
+      wsServer.clients.forEach(function each(inClient: WebSocket) {
+        inClient.send(`start_${JSON.stringify(shuffledLayout)}`);
+      });
     }
     
 });
